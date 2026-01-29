@@ -1,0 +1,19 @@
+comparisons: 
+  - JSON
+  - XML
+environment:
+  # key_one is the field name of the python Environment object and API_KEY_ONE
+  # is the environment variable to use if set. This will override the value in
+  # the defaults in url_one below.
+  key_one: API_KEY_ONE
+  url_one: API_URL_ONE
+  key_two: API_KEY_TWO
+  url_two: API_URL_TWO
+requests_file: src/checkplease/requests.json
+response_dir: responses
+url_one:
+  key: 0n3_secret
+  url: http://localhost:9090/geoclient/v2
+url_two:
+  key: 7w0_secret
+  url: https://api.nyc.gov/geoclient/v2

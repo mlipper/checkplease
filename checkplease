@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+this_dir=
+# Set API_KEY variables
+if command -v greadlink &> /dev/null; then
+  # macOS with coreutils installed
+  this_dir="$(dirname "$(greadlink -vf "$BASH_SOURCE")")"
+else
+  # Linux
+  this_dir="$(dirname "$(readlink -vf "$BASH_SOURCE")")"
+fi
+
+source "${this_dir}"/.local
+
+export API_URL_ONE=http://localhost:8080/geoclient/v2
+export API_URL_TWO=https://api.nyc.gov/geoclient/v2
+
+echo
+
+if [[ -n "$(docker ps -q --filter 'ancestor=geoclient')" ]]; then
+  echo "geoclient:latest container is already running."
+else
+# Run service one from a local docker container running in the background.
+# The container is removed once it's stopped. 
+  echo "Running geoclient:latest container."
+  docker run --rm -d \
+    --mount source=geosupport-latest,target=/opt/geosupport \
+    -p 8080:8080 geoclient:latest
+  sleep 4 # Give the container a moment to start
+fi
+
+echo
+
+PYTHONPATH=src uv run python -m checkplease "$@"
