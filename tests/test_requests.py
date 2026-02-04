@@ -3,6 +3,14 @@
 
 class TestDiffRequest:
 
+    def test_diff_request_common_name_json(self, diff_request_json):
+        common_name = "1200-address"
+        assert common_name == diff_request_json.common_name()
+
+    def test_diff_request_common_name_xml(self, diff_request_xml):
+        common_name = "1200-address"
+        assert common_name == diff_request_xml.common_name()
+
     def test_diff_request_dirname_json(self, diff_request_json, date_stamp_001):
         assert date_stamp_001 == diff_request_json.dirname()
 
@@ -47,6 +55,18 @@ class TestDiffRequest:
 
 
 class TestRequest:
+    def test_common_id_forward_slash(
+        self, foo_bar_endpoint, foo_bar_id_zero, foo_bar_json_local_request
+    ):
+        expected = f"{foo_bar_id_zero}-{foo_bar_endpoint}"
+        assert foo_bar_json_local_request.common_id() == expected
+
+    def test_common_id(
+        self, address_endpoint, address_id_zero, address_xml_local_request
+    ):
+        expected = f"{address_id_zero}-{address_endpoint}"
+        assert address_xml_local_request.common_id() == expected
+
     def test_file_id_forward_slash(
         self, foo_bar_endpoint, foo_bar_id_zero, foo_bar_json_local_request
     ):

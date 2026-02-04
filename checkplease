@@ -24,11 +24,15 @@ if [[ -n "$(docker ps -q --filter 'ancestor=geoclient')" ]]; then
 else
 # Run service one from a local docker container running in the background.
 # The container is removed once it's stopped. 
-  echo "Running geoclient:latest container."
+  echo "Starting geoclient:latest container."
   docker run --rm -d \
     --mount source=geosupport-latest,target=/opt/geosupport \
     -p 8080:8080 geoclient:latest
-  sleep 4 # Give the container a moment to start
+  while [[ -z "$(docker ps -q --filter 'ancestor=geoclient')" ]]; do
+    # Give the container a moment to start
+    echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
+    sleep 10
+  done
 fi
 
 echo

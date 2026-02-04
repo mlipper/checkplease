@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 
 from checkplease import io
+from checkplease.constants import DIFF_HTML_FILENAME_SUFFIX
 from checkplease.diff import Diff
 
 
@@ -30,6 +31,48 @@ def expected_paths(respdir, diffreq):
     )
 
 class TestDiff:
+    def test_dirpath_json(self, response_dir, diff_request_json, diff_response_json):
+        expected_dir = Path(
+            response_dir
+            / diff_request_json.content_type.as_dir_name()
+            / diff_request_json.dirname()
+        )
+        diff = Diff(response_dir, diff_request_json, diff_response_json)
+        actual_dir = diff.dirpath()
+        assert(expected_dir == actual_dir)
+
+    def test_htmldiff_path_json(self, response_dir, diff_request_json, diff_response_json):
+        expected_path = Path(
+            response_dir
+            / diff_request_json.content_type.as_dir_name()
+            / diff_request_json.dirname()
+            / f"{diff_request_json.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
+        )
+        diff = Diff(response_dir, diff_request_json, diff_response_json)
+        actual_path = diff.htmldiff_path()
+        assert(expected_path == actual_path)
+
+    def test_dirpath_xml(self, response_dir, diff_request_xml, diff_response_xml):
+        expected_dir = Path(
+            response_dir
+            / diff_request_xml.content_type.as_dir_name()
+            / diff_request_xml.dirname()
+        )
+        diff = Diff(response_dir, diff_request_xml, diff_response_xml)
+        actual_dir = diff.dirpath()
+        assert(expected_dir == actual_dir)
+
+    def test_htmldiff_path_xml(self, response_dir, diff_request_xml, diff_response_xml):
+        expected_path = Path(
+            response_dir
+            / diff_request_xml.content_type.as_dir_name()
+            / diff_request_xml.dirname()
+            / f"{diff_request_xml.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
+        )
+        diff = Diff(response_dir, diff_request_xml, diff_response_xml)
+        actual_path = diff.htmldiff_path()
+        assert(expected_path == actual_path)
+
     def test_filepaths_json(self, response_dir, diff_request_json, diff_response_json):
         expected_one, expected_two = expected_paths(response_dir, diff_request_json)
         diff = Diff(response_dir, diff_request_json, diff_response_json)
