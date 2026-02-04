@@ -55,17 +55,6 @@ class TestDiffRequest:
 
 
 class TestRequest:
-    def test_common_id_forward_slash(
-        self, foo_bar_endpoint, foo_bar_id_zero, foo_bar_json_local_request
-    ):
-        expected = f"{foo_bar_id_zero}-{foo_bar_endpoint}"
-        assert foo_bar_json_local_request.common_id() == expected
-
-    def test_common_id(
-        self, address_endpoint, address_id_zero, address_xml_local_request
-    ):
-        expected = f"{address_id_zero}-{address_endpoint}"
-        assert address_xml_local_request.common_id() == expected
 
     def test_file_id_forward_slash(
         self, foo_bar_endpoint, foo_bar_id_zero, foo_bar_json_local_request

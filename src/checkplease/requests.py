@@ -16,7 +16,7 @@ class DiffRequest:
     date_stamp: str
 
     def common_name(self) -> str:
-        return f"{self.request_one.common_id()}"
+        return f"{self.request_one.file_id()}"
 
     def dirname(self) -> str:
         return self.date_stamp
@@ -39,9 +39,6 @@ class Request:
     def __post_init__(self):
         if self.params is None:
             self.params = {}
-
-    def common_id(self) -> str:
-        return f"{self.id}-{self.endpoint}"
 
     def file_id(self) -> str:
         return f"{self.id}-{self.endpoint.replace('/', '-')}"

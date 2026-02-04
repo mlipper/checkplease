@@ -39,7 +39,11 @@ class Diff:
             self.dirpath() / f"{self.diff_request.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
         )
 
-    def save_htmldiff(self) -> None:
+    def save(self) -> None:
+        self.save_responses()
+        self.save_htmldiff()
+
+    def save_htmldiff(self) -> int:
         file_one, file_two = self.filepaths()
         lins_of_file_one = io.readlines_from_file(file_one)
         lins_of_file_two = io.readlines_from_file(file_two)
@@ -51,7 +55,7 @@ class Diff:
             todesc=file_two.name,
         )
         diff_path = self.htmldiff_path()
-        io.write_string_to_file(html_diff, diff_path)
+        return io.write_string_to_file(html_diff, diff_path)
 
     def save_responses(self) -> None:
         file_one, file_two = self.filepaths()
