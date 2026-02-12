@@ -28,10 +28,12 @@ else
   docker run --rm -d \
     --mount source=geosupport-latest,target=/opt/geosupport \
     -p 8080:8080 geoclient:latest
+  echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
+  sleep 10
   while [[ -z "$(docker ps -q --filter 'ancestor=geoclient')" ]]; do
     # Give the container a moment to start
-    echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
-    sleep 10
+    echo "Waiting 6 more seconds for the geoclient:latest container to be ready..."
+    sleep 6
   done
 fi
 
