@@ -2,8 +2,16 @@
 
 set -Eeuo pipefail
 
+#
+# Globals
+#
+
+DEFAULT_API_URL_ONE=http://localhost:9090/geoclient/v2
+DEFAULT_API_URL_TWO=https://api.nyc.gov/geoclient/v2
+DEFAULT_CONTAINER_PORT=8080
+DEFAULT_LOCAL_PORT=9090
+
 this_dir=
-# Set API_KEY variables
 if command -v greadlink &> /dev/null; then
   # macOS with coreutils installed
   this_dir="$(dirname "$(greadlink -vf "$BASH_SOURCE")")"
@@ -12,31 +20,256 @@ else
   this_dir="$(dirname "$(readlink -vf "$BASH_SOURCE")")"
 fi
 
-source "${this_dir}"/.local
+die() {
+    echo "[ERROR] $*" 1>&2
+    exit 1
+}
 
-export API_URL_ONE=http://localhost:8080/geoclient/v2
-export API_URL_TWO=https://api.nyc.gov/geoclient/v2
+#
+# Sets URL and possibly other environment variables used by the application.
+#
+# Usage: init_env [url-one] [url-two]
+#
+# Order of precedence, the following steps are taken:
+#
+# 1. One or both API_URL_* passed as arguments
+# 2. Any API_* variables set by sourcing file '${this_dir}/.local'
+# 3. If either API_URL_ONE or API_URL_TWO remain unset, defaults are used
+#
+# NOTE: API_KEY_* variables must be set in the file
+#
+init_env() {
+  local url_one="$1"
+  local url_two="$2"
 
-echo
+  [[ -f "${this_dir}"/.local ]] && source "${this_dir}"/.local
 
-if [[ -n "$(docker ps -q --filter 'ancestor=geoclient')" ]]; then
-  echo "geoclient:latest container is already running."
-else
-# Run service one from a local docker container running in the background.
-# The container is removed once it's stopped. 
-  echo "Starting geoclient:latest container."
-  docker run --rm -d \
-    --mount source=geosupport-latest,target=/opt/geosupport \
-    -p 8080:8080 geoclient:latest
-  echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
-  sleep 10
-  while [[ -z "$(docker ps -q --filter 'ancestor=geoclient')" ]]; do
-    # Give the container a moment to start
-    echo "Waiting 6 more seconds for the geoclient:latest container to be ready..."
-    sleep 6
-  done
-fi
+  set +u
 
-echo
+  if [[ -n "$url_one" ]]; then
+    export API_URL_ONE="$url_one"
+  fi
 
-PYTHONPATH=src uv run python -m checkplease "$@"
+  if [[ -z "$API_URL_ONE" ]]; then
+    export API_URL_ONE="$DEFAULT_API_URL_ONE"
+  fi
+
+  if [[ -n "$url_two" ]]; then
+    export API_URL_TWO="$url_two"
+  fi
+
+  if [[ -z "$API_URL_TWO" ]]; then
+    export API_URL_TWO="$DEFAULT_API_URL_TWO"
+  fi
+
+  set -u
+}
+
+#
+# Runs a local geoclient container.
+#
+# Usage: "run_container <local-port> <container-port> [name] [tag]"
+#
+# Arguments:
+#   local-port     - required
+#   container-port - required
+#   container-name - optional: defaults to "geoclient"
+#   container-tag  - optional: defaults to "latest"
+#
+run_container() {
+
+    if [ "$#" -ne 4 ]; then
+        die "run_container requires four arguments: <container-name> <container-tag> <local-port> <container-port>"
+    fi
+
+    local name="$1"
+    local tag="$2"
+    local lport="$3"
+    local cport="$4"
+
+    echo
+
+    if [[ -n "$(docker ps -q --filter 'ancestor=${name}')" ]]; then
+      die "${name}:${tag} container is already running."
+    fi
+
+    echo "Starting ${name}:${tag} container using command line:"
+    echo "docker run --rm -d --mount source=geosupport-latest,target=/opt/geosupport -p ${lport}:${cport} ${name}:${tag}"
+
+    docker run --rm -d \
+      --mount source=geosupport-latest,target=/opt/geosupport \
+      -p "${lport}:${cport}" "${name}:${tag}"
+
+    echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
+
+    sleep 10
+
+    while [[ -z "$(docker ps -q --filter 'ancestor=geoclient')" ]]; do
+      # Give the container a moment to start
+      echo "Waiting 6 more seconds for the geoclient:latest container to be ready..."
+      sleep 6
+    done
+
+    echo
+}
+
+usage() {
+    local this_file
+    this_file="$(basename "${BASH_SOURCE[0]}")"
+cat <<- EOF
+
+Usage: ${this_file} [OPTIONS]
+
+Runs the checkplease application.
+
+If file .local exists in the same directory as this script, it is sourced
+before any command line options are processed. Any API_* variable can be
+configured there and will override the default values used if unset.
+
+Options can be used to set the API_URL_ONE and API_URL_TWO environment
+variables. When given, these take precedence over either of these variables
+even if they've already be set.
+
+At this time, the API_KEY_ONE and API_KEY_TWO are assumed to have already been
+set or configured in .local.
+
+Options:
+  --help                  Show this message.
+
+  --container             The local container should be run and environment
+                          variable API_URL_ONE will be set using this template:
+
+                          http://localhost:<local-port>/geoclient/v2
+
+                          If the --local-port option is not given, it defaults
+                          to 9090.
+
+                          Default is not to run a local container and assume
+                          that the value of API_URL_ONE refers to a running
+                          Geoclient v2 service. 
+
+  --show                  Show the value of environment variables used by
+                          this application and, if specified, the actions of
+                          this script.
+
+                          NOTE: If this flag is given, the application is not run.
+
+  NOTE: The following options are ignored if --container flag is not given.
+
+  --local-port=<port>     Local port to use for the container.
+                          Defaults to 9090.
+
+  --container-port=<port> Container port to use for the container.
+                          Defaults to 8080.
+
+  --container-name=<name> Name of the container to run.
+                          Defaults to "geoclient".
+
+  --container-tag=<tag>   Tag of the container to run.
+                          Defaults to "latest".
+
+  NOTE: If any of the following options are given and the --container flag is
+        also given, no attempt .
+
+  --url-one=<url>         Sets the value of the API_URL_ONE environment variable.
+                          This takes precedence over any other configuration
+                          that sets this variable.
+                          Defaults to ${DEFAULT_API_URL_ONE} if API_URL_ONE
+                          has not been set.
+
+  --url-two=<url>         Sets the value of the API_URL_TWO environment variable.
+                          This takes precedence over any other configuration
+                          that sets this variable.
+                          Defaults to ${DEFAULT_API_URL_TWO} if API_URL_TWO
+                          has not been set.
+
+EOF
+}
+
+main() {
+      local container_name=geoclient
+      local container_port=
+      local container_tag=latest
+      local local_port=
+      local container=
+      local show=
+      local url_one=
+      local url_two=
+
+      while [ $# -gt 0 ]; do
+
+        # Access remaining positional parameters.
+        case "$1" in
+            --help)
+                usage; exit 0
+                ;;
+            --container)
+                container="true" ; shift
+                ;;
+            --show)
+                show="true"; shift
+                ;;
+            --local-port=*)
+                local_port="${1##--local-port=}"; shift
+                ;;
+            --container-port=*)
+                container_port="${1##--container-port=}"; shift
+                ;;
+            --container-name=*)
+                container_name="${1##--container-name=}"; shift
+                ;;
+            --container-tag=*)
+                container_tag="${1##--container-tag=}"; shift
+                ;;
+            --url-one=*)
+                url_one="${1##--url-one=}"; shift
+                ;;
+            --url-two=*)
+                url_two="${1##--url-two=}"; shift
+                ;;
+            "")
+                usage; exit 0
+                ;;
+            -*|--*)
+                die "Invalid option: $1"; shift
+                ;;
+            *)
+                die "Invalid argument: $1"; shift
+                ;;
+        esac
+    done
+
+    if [[ -z "$url_one" ]] && [[ -n "$local_port" ]]; then
+      url_one="http://localhost:${local_port}/geoclient/v2"
+    fi
+
+    if [[ -z "$container_port" ]]; then
+      container_port=$DEFAULT_CONTAINER_PORT
+    fi
+    if [[ -z "$local_port" ]]; then
+      local_port=$DEFAULT_LOCAL_PORT
+    fi
+
+    init_env "$url_one" "$url_two"
+
+    if [[ -n "$show" ]]; then
+      echo "container_name=$container_name"
+      echo "container_port=$container_port"
+      echo "container_tag=$container_tag"
+      echo "local_port=$local_port"
+      echo "container=$container"
+      echo "url_one=$url_one"
+      echo "url_two=$url_two"
+      echo "API_URL_ONE=$API_URL_ONE"
+      echo "API_URL_TWO=$API_URL_TWO"
+    else
+      if [[ -n "$container" ]]; then
+        run_container "$container_name" "$container_tag" "$local_port" "$container_port"
+      fi
+      #PYTHONPATH=src uv run python -m checkplease "$@"
+      PYTHONPATH=src uv run python -m checkplease
+    fi
+}
+
+main "$@"
+
