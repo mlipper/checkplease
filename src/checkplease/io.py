@@ -29,6 +29,10 @@ def save_xml_response(response, filepath: Path) -> None:
     ET.indent(root, space=FORMAT_XML_STRING)
     ET.ElementTree(root).write(filepath, encoding=response.apparent_encoding, xml_declaration=False)
 
+def writelines(genrtr, filepath: Path) -> None:
+    with open(filepath, 'w', encoding='utf-8') as f:
+        return f.writelines(genrtr)
+
 def write_string_to_file(content: str, filepath: Path) -> int:
     filepath.parent.mkdir(parents=True, exist_ok=True)
     with open(filepath, 'w', encoding='utf-8') as f:

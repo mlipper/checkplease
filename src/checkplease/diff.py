@@ -1,5 +1,7 @@
 """Encapsulates the diff of the responses from two REST requests."""
 
+import sys
+import difflib
 from difflib import HtmlDiff
 from pathlib import Path
 
@@ -42,6 +44,15 @@ class Diff:
     def save(self) -> None:
         self.save_responses()
         self.save_htmldiff()
+        self.save_unified_diff()
+
+    def save_unified_diff(self) -> None:
+        file_one, file_two = self.filepaths()
+        lins_of_file_one = io.readlines_from_file(file_one)
+        lins_of_file_two = io.readlines_from_file(file_two)
+        udiff = difflib.unified_diff(lins_of_file_one, lins_of_file_two, fromfile=file_one.name, tofile=file_two.name)
+        udiff_path = Path(self.dirpath() / f"{self.diff_request.common_name()}.patch")
+        io.writelines(udiff, udiff_path)
 
     def save_htmldiff(self) -> int:
         file_one, file_two = self.filepaths()
