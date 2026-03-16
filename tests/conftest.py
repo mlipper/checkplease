@@ -1,5 +1,6 @@
 import pytest
 
+from checkplease.config import DiffConfig
 from checkplease.content_type import ContentType
 from checkplease.requests import DiffRequest, Request
 from checkplease.rest_client import DiffResponse
@@ -197,6 +198,13 @@ def version_xml_remote_request(remote_url, version_endpoint, version_id_one, non
     )
 
 # ~------ DiffRequests ------~ #
+@pytest.fixture
+def diffconfig():
+    return DiffConfig(
+        patch=False,
+        short=False
+    )
+
 @pytest.fixture
 def diff_request_json(address_json_local_request, address_json_remote_request, date_stamp_001):
     return DiffRequest(

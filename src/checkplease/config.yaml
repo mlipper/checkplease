@@ -1,6 +1,9 @@
 comparisons: 
   - JSON
   - XML
+diff:
+  patch: False
+  short: False
 environment:
   # key_one is the field name of the python Environment object and API_KEY_ONE
   # is the environment variable to use if set. This will override the value in

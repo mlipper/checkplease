@@ -6,7 +6,8 @@ from difflib import HtmlDiff
 from pathlib import Path
 
 from checkplease import io
-from checkplease.constants import DIFF_HTML_FILENAME_SUFFIX
+from checkplease.config import DiffConfig
+from checkplease.constants import DIFF_HTML_FILENAME_SUFFIX, DIFF_PATCH_FILENAME_SUFFIX
 from checkplease.content_type import ContentType
 from checkplease.requests import DiffRequest
 from checkplease.rest_client import DiffResponse
@@ -17,11 +18,12 @@ Diff class is responsible for naming and saving the responses to files.
 """
 class Diff:
     def __init__(
-        self, response_dir: Path, diff_request: DiffRequest, diff_response: DiffResponse
+        self, response_dir: Path, diff_request: DiffRequest, diff_response: DiffResponse, diff_config: DiffConfig
     ):
         self.response_dir = response_dir
         self.diff_request = diff_request
         self.diff_response = diff_response
+        self.diff_config = diff_config
 
     def dirpath(self) -> Path:
         return Path(
@@ -44,14 +46,15 @@ class Diff:
     def save(self) -> None:
         self.save_responses()
         self.save_htmldiff()
-        self.save_unified_diff()
+        if self.diff_config.patch:
+            self.save_unified_diff()
 
     def save_unified_diff(self) -> None:
         file_one, file_two = self.filepaths()
         lins_of_file_one = io.readlines_from_file(file_one)
         lins_of_file_two = io.readlines_from_file(file_two)
         udiff = difflib.unified_diff(lins_of_file_one, lins_of_file_two, fromfile=file_one.name, tofile=file_two.name)
-        udiff_path = Path(self.dirpath() / f"{self.diff_request.common_name()}.patch")
+        udiff_path = Path(self.dirpath() / f"{self.diff_request.common_name()}{DIFF_PATCH_FILENAME_SUFFIX}")
         io.writelines(udiff, udiff_path)
 
     def save_htmldiff(self) -> int:
@@ -64,6 +67,7 @@ class Diff:
             lins_of_file_two,
             fromdesc=file_one.name,
             todesc=file_two.name,
+            context=self.diff_config.short,
         )
         diff_path = self.htmldiff_path()
         return io.write_string_to_file(html_diff, diff_path)

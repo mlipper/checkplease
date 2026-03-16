@@ -36,10 +36,15 @@ class ContentTypes:
     def only_xml(self):
         self.content_types = [ContentType.XML]
 
+@dataclass
+class DiffConfig:
+    patch: bool
+    short: bool
 
 @dataclass
 class Config:
     compare: ContentTypes
+    diff: DiffConfig
     environment: Environment
     requests_file: Path
     response_dir: Path
@@ -49,6 +54,9 @@ class Config:
     def show_config(self) -> str:
         return f"""
 comparisons: {', '.join([ct.value for ct in self.compare.content_types])}
+diff:
+    patch: {self.diff.patch}
+    short: {self.diff.short}
 environment:
   API_KEY_ONE={os.environ.get("API_KEY_ONE", "<unset>")}
   API_URL_ONE={os.environ.get("API_URL_ONE", "<unset>")}
@@ -87,6 +95,7 @@ def load_config(data: Any) -> Config:
     comparisons = [ContentType.from_string(ct) for ct in data['comparisons']]
     return Config(
         compare=ContentTypes(content_types=comparisons),
+        diff=DiffConfig(data['diff']['patch'], data['diff']['short']),
         environment=environment,
         requests_file=Path(data['requests_file']),
         response_dir=Path(data['response_dir']),

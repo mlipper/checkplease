@@ -5,7 +5,7 @@ import pytest
 import yaml
 from pathlib import Path
 
-from checkplease.config import load_config, Environment
+from checkplease.config import load_config, DiffConfig, Environment
 from checkplease.content_type import ContentType
 from checkplease.url import Url
 
@@ -24,10 +24,20 @@ def url_two():
     )
 
 @pytest.fixture
-def config_data(url_one, url_two):
+def diff_config():
+    return DiffConfig (
+        patch=False,
+        short=False
+    )
+
+@pytest.fixture
+def config_data(url_one, url_two, diff_config):
     content = f"""comparisons: 
   - JSON
   - XML
+diff:
+    patch: {diff_config.patch}
+    short: {diff_config.short}
 environment:
   key_one: KEY_ONE
   url_one: URL_ONE
@@ -57,7 +67,7 @@ def patched_env(monkeypatch):
     return Environment(key_one="KEY_ONE", url_one="URL_ONE", key_two="KEY_TWO", url_two="URL_TWO")
 
 class TestConfig:
-    def test_config_loaded(self, config, url_one, url_two):
+    def test_config_loaded(self, config, url_one, url_two, diff_config):
         assert config is not None
         assert ContentType.JSON in config.compare.content_types
         assert ContentType.XML in config.compare.content_types
@@ -69,6 +79,8 @@ class TestConfig:
         assert config.environment.url_one == "URL_ONE"
         assert config.environment.key_two == "KEY_TWO"
         assert config.environment.url_two == "URL_TWO"
+        assert config.diff.patch == False
+        assert config.diff.short == False
 
     def test_environment_overrides(self, config, patched_env):
         resolved_url_one = patched_env.resolve_url_one(config.url_one)

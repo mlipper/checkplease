@@ -21,7 +21,7 @@ def run(config):
         for diff_request in diff_requests:
             rest_client = RestClient()
             diff_response = rest_client.call(diff_request)
-            diff = Diff(config.response_dir, diff_request, diff_response)
+            diff = Diff(config.response_dir, diff_request, diff_response, config.diff)
             diff.save()
             diffs.append(diff)
             #log.info(f"Processed diff request {diff_request.date_stamp} and created diff {diff_response}.")

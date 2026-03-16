@@ -9,6 +9,8 @@ from checkplease import app,load_config, log
 def main():
     parser = argparse.ArgumentParser(prog="checkplease", description="%(prog)s is a CLI for making REST requests and diff'ing responses.")
     parser.add_argument("-c", "--config", help="Show the current configuration and exit.", action="store_true")
+    parser.add_argument("-p", "--diff-patch", help="Create a .patch file in unified diff format in addition the HTML diff.", action="store_true")
+    parser.add_argument("-s", "--diff-short", help="Only show differences in generated diffs instead of showing the entire contents.", action="store_true")
     parser.add_argument("-j", "--json", help="Compare JSON responses only. Normally, both JSON and XML are compared.", action="store_true")
     parser.add_argument("-d", "--debug", help="Enable debugging output.", action="store_true")
     parser.add_argument("-x", "--xml", help="Compare XML responses only. Normally, both JSON and XML are compared.", action="store_true")
@@ -20,6 +22,12 @@ def main():
         log.debug("Debugging output enabled.")
 
     config = load_config()
+
+    if args.diff_patch:
+        config.diff.patch = True
+
+    if args.diff_short:
+        config.diff.short = True
 
     if args.json:
         config.compare.only_json()
