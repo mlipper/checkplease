@@ -290,7 +290,8 @@ main() {
       if [[ -n "$container" ]]; then
         run_container "$container_name" "$container_tag" "$local_port" "$container_port"
       fi
-      PYTHONPATH=src uv run python -m checkplease "$diff_patch" "$diff_short"
+      # Do not double-quote arguments 
+      PYTHONPATH=src uv run python -m checkplease $diff_patch $diff_short
     fi
 }
 
