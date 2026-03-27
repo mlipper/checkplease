@@ -8,8 +8,14 @@ set -Eeuo pipefail
 
 DEFAULT_API_URL_ONE=http://localhost:9090/geoclient/v2
 DEFAULT_API_URL_TWO=https://api.nyc.gov/geoclient/v2
+DEFAULT_CONTAINER_NAME=checkplease
 DEFAULT_CONTAINER_PORT=8080
+DEFAULT_IMAGE_NAME=geoclient
+DEFAULT_IMAGE_TAG=latest
 DEFAULT_LOCAL_PORT=9090
+STARTED_CONTAINER=0
+STARTED_CONTAINER_ID=
+STARTED_CONTAINER_NAME=
 
 this_dir=
 if command -v greadlink &> /dev/null; then
@@ -21,8 +27,22 @@ else
 fi
 
 die() {
-    echo "[ERROR] $*" 1>&2
-    exit 1
+  echo "[ERROR] $*" 1>&2
+  exit 1
+}
+
+cleanup_on_exit() {
+  local exit_code=$?
+
+  if [[ "$STARTED_CONTAINER" -eq 1 ]] && [[ -n "$STARTED_CONTAINER_ID" ]]; then
+    echo
+    echo "Attempting to stop container ${STARTED_CONTAINER_NAME} (${STARTED_CONTAINER_ID})..."
+    echo
+    docker stop "$STARTED_CONTAINER_ID" > /dev/null 2>&1 || true
+  fi
+
+  trap - EXIT
+  exit "$exit_code"
 }
 
 #
@@ -68,45 +88,45 @@ init_env() {
 #
 # Runs a local geoclient container.
 #
-# Usage: "run_container <local-port> <container-port> [name] [tag]"
+# Usage: "run_container <image_name> <image_tag> <local-port> <container-port>"
 #
 # Arguments:
-#   local-port     - required
-#   container-port - required
-#   container-name - optional: defaults to "geoclient"
-#   container-tag  - optional: defaults to "latest"
+#   image-name
+#   image-tag
+#   local-port
+#   container-port
 #
 run_container() {
 
     if [ "$#" -ne 4 ]; then
-        die "run_container requires four arguments: <container-name> <container-tag> <local-port> <container-port>"
+      die "run_container requires four arguments: <image-name> <image-tag> <local-port> <container-port>"
     fi
 
-    local name="$1"
-    local tag="$2"
+    local image_name="$1"
+    local image_tag="$2"
     local lport="$3"
     local cport="$4"
 
     echo
 
-    if [[ -n "$(docker ps -q --filter 'ancestor=${name}')" ]]; then
-      die "${name}:${tag} container is already running."
-    fi
+    echo "Starting ${image_name}:${image_tag} container using command line:"
+    echo "docker run --rm -d --name ${DEFAULT_CONTAINER_NAME} --mount source=geosupport-latest,target=/opt/geosupport -p ${lport}:${cport} ${image_name}:${image_tag}"
 
-    echo "Starting ${name}:${tag} container using command line:"
-    echo "docker run --rm -d --mount source=geosupport-latest,target=/opt/geosupport -p ${lport}:${cport} ${name}:${tag}"
-
-    docker run --rm -d \
+    STARTED_CONTAINER_ID=$(docker run --rm -d \
+      --name "${DEFAULT_CONTAINER_NAME}" \
       --mount source=geosupport-latest,target=/opt/geosupport \
-      -p "${lport}:${cport}" "${name}:${tag}"
+      -p "${lport}:${cport}" "${image_name}:${image_tag}")
 
-    echo "Waiting 10 seconds for the geoclient:latest container to be ready..."
+    STARTED_CONTAINER_NAME="${DEFAULT_CONTAINER_NAME}"
+    STARTED_CONTAINER=1
+
+    echo "Waiting 10 seconds for the ${STARTED_CONTAINER_NAME} container to be ready..."
 
     sleep 10
 
-    while [[ -z "$(docker ps -q --filter 'ancestor=geoclient')" ]]; do
+    while [[ -z "$(docker ps -q --filter "id=${STARTED_CONTAINER_ID}")" ]]; do
       # Give the container a moment to start
-      echo "Waiting 6 more seconds for the geoclient:latest container to be ready..."
+      echo "Waiting 6 more seconds for the ${STARTED_CONTAINER_NAME} container to be ready..."
       sleep 6
     done
 
@@ -173,14 +193,15 @@ Options:
   --container-port=<port> Container port to use for the container.
                           Defaults to 8080.
 
-  --container-name=<name> Name of the container to run.
+  --image-name=<name>     Name of the image to run.
                           Defaults to "geoclient".
 
-  --container-tag=<tag>   Tag of the container to run.
+  --image-tag=<tag>       Tag of the image to run.
                           Defaults to "latest".
 
   NOTE: If any of the following options are given and the --container flag is
-        also given, no attempt .
+        also given, no attempt is made to validate they match any other
+        container-related options provided.
 
   --url-one=<url>         Sets the value of the API_URL_ONE environment variable.
                           This takes precedence over any other configuration
@@ -198,14 +219,14 @@ EOF
 }
 
 main() {
-      local container_name=geoclient
-      local container_port=
-      local container_tag=latest
-      local diff_patch=
-      local diff_short=
-      local local_port=
       local config=
       local container=
+      local container_port=
+      local diff_patch=
+      local diff_short=
+      local image_name="$DEFAULT_IMAGE_NAME"
+      local image_tag="$DEFAULT_IMAGE_TAG"
+      local local_port=
       local url_one=
       local url_two=
 
@@ -234,11 +255,11 @@ main() {
             --container-port=*)
                 container_port="${1##--container-port=}"; shift
                 ;;
-            --container-name=*)
-                container_name="${1##--container-name=}"; shift
+            --image-name=*)
+                image_name="${1##--image-name=}"; shift
                 ;;
-            --container-tag=*)
-                container_tag="${1##--container-tag=}"; shift
+            --image-tag=*)
+                image_tag="${1##--image-tag=}"; shift
                 ;;
             --url-one=*)
                 url_one="${1##--url-one=}"; shift
@@ -258,6 +279,8 @@ main() {
         esac
     done
 
+    trap cleanup_on_exit EXIT
+
     if [[ -z "$url_one" ]] && [[ -n "$local_port" ]]; then
       url_one="http://localhost:${local_port}/geoclient/v2"
     fi
@@ -272,13 +295,13 @@ main() {
     init_env "$url_one" "$url_two"
 
     if [[ -n "$config" ]]; then
-      echo "container_name=$container_name"
+      echo "container=$container"
       echo "container_port=$container_port"
-      echo "container_tag=$container_tag"
       echo "diff_patch=$diff_patch"
       echo "diff_short=$diff_short"
+      echo "image_name=$image_name"
+      echo "image_tag=$image_tag"
       echo "local_port=$local_port"
-      echo "container=$container"
       echo "url_one=$url_one"
       echo "url_two=$url_two"
       echo "API_URL_ONE=$API_URL_ONE"
@@ -288,7 +311,7 @@ main() {
       PYTHONPATH=src uv run python -m checkplease $config $diff_patch $diff_short
     else
       if [[ -n "$container" ]]; then
-        run_container "$container_name" "$container_tag" "$local_port" "$container_port"
+        run_container "$image_name" "$image_tag" "$local_port" "$container_port"
       fi
       # Do not double-quote arguments 
       PYTHONPATH=src uv run python -m checkplease $diff_patch $diff_short
