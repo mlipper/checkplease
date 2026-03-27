@@ -229,11 +229,22 @@ class MockRestResponse:
         self.content = content
         self.apparent_encoding = apparent_encoding
 
+    def __str__(self):
+        return f"{self.content}"
+
     def str_content(self):
         return f"{self.content}"
 
     def json(self):
         return self.content
+
+@pytest.fixture
+def rest_response_json():
+    return MockRestResponse({ "response": {"herp": "derp"} }, "utf-8")
+
+@pytest.fixture
+def rest_response_xml():
+    return MockRestResponse("<response><herp>derp</herp></response>", "utf-8")
 
 @pytest.fixture
 def diff_response_json():
@@ -244,9 +255,25 @@ def diff_response_json():
     )
 
 @pytest.fixture
+def identical_diff_response_json():
+    return DiffResponse(
+        content_type=ContentType.JSON,
+        response_one=MockRestResponse({ "response": {"herp": "derp"} }, "utf-8"),
+        response_two=MockRestResponse({ "response": {"herp": "derp"} }, "utf-8")
+    )
+
+@pytest.fixture
 def diff_response_xml():
     return DiffResponse(
         content_type=ContentType.XML,
         response_one=MockRestResponse("<response><foo>bar</foo></response>", "utf-8"),
         response_two=MockRestResponse("<response><foo>duh</foo></response>", "utf-8")
+    )
+
+@pytest.fixture
+def identical_diff_response_xml():
+    return DiffResponse(
+        content_type=ContentType.XML,
+        response_one=MockRestResponse("<response><herp>derp</herp></response>", "utf-8"),
+        response_two=MockRestResponse("<response><herp>derp</herp></response>", "utf-8")
     )

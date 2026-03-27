@@ -5,7 +5,7 @@ Given an initialized configuration, creates the necessary runtime components and
 """
 
 from checkplease import log
-from checkplease.diff import Diff
+from checkplease.diff import Diff, Summary
 from checkplease.requests import Requests
 from checkplease.rest_client import RestClient
 
@@ -25,5 +25,6 @@ def run(config):
             diff.save()
             diffs.append(diff)
             #log.info(f"Processed diff request {diff_request.date_stamp} and created diff {diff_response}.")
+        Summary(config.response_dir, diffs).summarize() 
     log.info(f"Completed REST requests for {len(diffs)} diffs.")
     log.info("checkplease application finished.")

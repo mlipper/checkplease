@@ -1,7 +1,6 @@
 """Encapsulates the diff of the responses from two REST requests."""
 
-import sys
-#import filecmp
+import filecmp
 import difflib
 from difflib import HtmlDiff
 from pathlib import Path
@@ -43,6 +42,10 @@ class Diff:
         return Path(
             self.dirpath() / f"{self.diff_request.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
         )
+
+    def identical(self) -> bool:
+        file_one, file_two = self.filepaths()
+        return filecmp.cmp(file_one, file_two)
 
     def unified_diff_path(self) -> Path:
         return Path(
@@ -100,81 +103,66 @@ class Diff:
             io.save_xml_response(self.diff_response.response_one, file_one)
             io.save_xml_response(self.diff_response.response_two, file_two)
 
-class FileContext:
-    def __init__(self, file_one: Path, file_two: Path):
-        self.file_one = file_one
-        self.file_two = file_two
-        self.lines_file_one = None
-        self.lines_file_two = None
-
-    def lines_of_file_one(self) -> list[str]:
-        if self.lines_file_one is None:
-            self.lines_file_one = io.readlines_from_file(self.file_one)
-        return self.lines_file_one
-
-    def lines_of_file_two(self) -> list[str]:
-        if self.lines_file_two is None:
-            self.lines_file_two = io.readlines_from_file(self.file_two)
-        return self.lines_file_two
-
-    def name_of_file_one(self) -> str:
-        return self.file_one.name
-
-    def name_of_file_two(self) -> str:
-        return self.file_two.name
-
 class Summary:
 
-    def __init__(self):
-        self.tables = list()
-        self.diff_files = list()
-
-    def add(self, table: str, diff_file: Path) -> None:
-        self.tables.append(table)
-        self.diff_files.append(diff_file)
+    def __init__(self, response_dir: Path, diffs: list[Diff]):
+        self.response_dir = response_dir
+        self.diffs = diffs
 
     def summarize(self) -> str:
-        html = self.body_begin
-        for t in self.tables:
-            html = html + t
-        html = html + self.body_end
+        #different = [d for d in self.diffs if not d.identical()]
+        different = []
+        for d in self.diffs:
+            if not d.identical():
+                different.append(d)
+        json_section = self.section(different, ContentType.JSON)
+        xml_section = self.section(different, ContentType.XML)
+        html = self._html(self._css(), self.response_dir.name, json_section + xml_section)
+        io.write_string_to_file(html, self.response_dir / "index.html")
         return html
 
-    def body_begin(self) -> str:
-        return """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    def _link(self, diff: Diff) -> str:
+        relative_path = diff.htmldiff_path().relative_to(diff.response_dir)
+        txt = f'<a href="{relative_path}">{diff.htmldiff_path().stem}</a>'
+        return txt
 
+    def _html(self, css: str, title: str, sections: str) -> str:
+        return f"""
 <html>
-
 <head>
-    <meta http-equiv="Content-Type"
-          content="text/html; charset=utf-8" />
-    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{title}</title>
     <style type="text/css">
-        :root {color-scheme: light dark}
-        table.diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
-        .diff_header {background-color:#e0e0e0}
-        td.diff_header {text-align:right}
-        .diff_next {background-color:#c0c0c0}
-        .diff_add {background-color:palegreen}
-        .diff_chg {background-color:#ffff77}
-        .diff_sub {background-color:#ffaaaa}
-
-        @media (prefers-color-scheme: dark) {
-            .diff_header {background-color:#666}
-            .diff_next {background-color:#393939}
-            .diff_add {background-color:darkgreen}
-            .diff_chg {background-color:#847415}
-            .diff_sub {background-color:darkred}
-        }
+    {css}
     </style>
 </head>
-
-<body>
-"""
-
-    def body_end(self) -> str:
-        return """
+<body class="diff">
+    <h1>Differences</h1>
+    <div>
+    {sections}
+    </div>
 </body>
+</html>
 """
+
+    def _css (self) -> str:
+        return """
+        :root {color-scheme: light dark}
+        .diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
+
+        @media (prefers-color-scheme: dark) {}"""
+
+    def section(self, diffs: list[Diff], filter: ContentType) -> str:
+        section = f"""
+<h2>{filter.value}</h2>
+<div>
+<ul>
+"""
+        for d in diffs:
+            if d.diff_request.content_type == filter:
+                section = section + f"<li>{self._link(d)}</li>"
+        section = section + """
+</ul>
+</div>
+"""
+        return section

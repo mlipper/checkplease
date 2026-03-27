@@ -4,8 +4,14 @@ import pytest
 from pathlib import Path
 
 from checkplease import io
+from checkplease import log
+from checkplease.config import DiffConfig
 from checkplease.constants import DIFF_HTML_FILENAME_SUFFIX, DIFF_PATCH_FILENAME_SUFFIX
-from checkplease.diff import Diff
+from checkplease.content_type import ContentType
+from checkplease.diff import Diff, Summary
+from checkplease.rest_client import DiffResponse
+from checkplease.requests import DiffRequest, Request
+from tests import FIXTURE_DIR, FIXTURE_DATE_STAMP, json_files, xml_files
 
 
 @pytest.fixture
@@ -100,7 +106,7 @@ class TestDiff:
         actual_dict_two = io.load_json_file(path_two)
         assert(expected_dict_two == actual_dict_two)
         unexpected_udiff_file = expected_udiff_path(response_dir, diff_request_json)
-        assert(unexpected_udiff_file.exists() == False)
+        assert(not unexpected_udiff_file.exists())
 
     def test_unified_diff(self, response_dir, diff_request_json, diff_response_json, diffconfig):
         diffconfig.patch = True
@@ -108,3 +114,159 @@ class TestDiff:
         diff.save()
         expected_udiff_file = expected_udiff_path(response_dir, diff_request_json)
         assert(expected_udiff_file.exists())
+
+
+class TestSummary:
+    @pytest.fixture
+    def json_diff_requests(self, local_url, remote_url, none_params):
+        version_req_one = Request(
+            base_url=local_url,
+            endpoint="version",
+            id="different",
+            params=none_params,
+            content_type=ContentType.JSON
+        )
+        version_req_two = Request(
+            base_url=remote_url,
+            endpoint="version",
+            id="different",
+            params=none_params,
+            content_type=ContentType.JSON
+        )
+        address_req_one = Request(
+            base_url=local_url,
+            endpoint="address",
+            id="same",
+            params=none_params,
+            content_type=ContentType.JSON
+        )
+        address_req_two = Request(
+            base_url=remote_url,
+            endpoint="address",
+            id="same",
+            params=none_params,
+            content_type=ContentType.JSON
+        )
+        reqs = {}
+        reqs["different_requests_json"] = DiffRequest(
+            request_one=version_req_one,
+            request_two=version_req_two,
+            date_stamp=FIXTURE_DATE_STAMP,
+            content_type=ContentType.JSON
+        )
+        reqs["same_requests_json"] = DiffRequest(
+            request_one=address_req_one,
+            request_two=address_req_two,
+            date_stamp=FIXTURE_DATE_STAMP,
+            content_type=ContentType.JSON
+        )
+        return reqs
+
+    @pytest.fixture
+    def xml_diff_requests(self, local_url, remote_url, none_params):
+        version_req_one = Request(
+            base_url=local_url,
+            endpoint="version",
+            id="different",
+            params=none_params,
+            content_type=ContentType.XML
+        )
+        version_req_two = Request(
+            base_url=remote_url,
+            endpoint="version",
+            id="different",
+            params=none_params,
+            content_type=ContentType.XML
+        )
+        address_req_one = Request(
+            base_url=local_url,
+            endpoint="address",
+            id="same",
+            params=none_params,
+            content_type=ContentType.XML
+        )
+        address_req_two = Request(
+            base_url=remote_url,
+            endpoint="address",
+            id="same",
+            params=none_params,
+            content_type=ContentType.XML
+        )
+        reqs = {}
+        reqs["different_requests_xml"] = DiffRequest(
+            request_one=version_req_one,
+            request_two=version_req_two,
+            date_stamp=FIXTURE_DATE_STAMP,
+            content_type=ContentType.XML
+        )
+        reqs["same_requests_xml"] = DiffRequest(
+            request_one=address_req_one,
+            request_two=address_req_two,
+            date_stamp=FIXTURE_DATE_STAMP,
+            content_type=ContentType.XML
+        )
+        return reqs
+
+    @pytest.fixture
+    def diffs(self, json_diff_requests, xml_diff_requests) -> DiffResponse:
+        # json_files is from this module's __init__.py
+        different_json_fls = json_files("version", True)
+        different_responses_json = DiffResponse(
+                content_type=ContentType.JSON,
+                response_one=different_json_fls[0],
+                response_two=different_json_fls[1])
+        same_json_fls = json_files("address", False)
+        same_responses_json = DiffResponse(
+                content_type=ContentType.JSON,
+                response_one=same_json_fls[0],
+                response_two=same_json_fls[1])
+        # xml_files is from this module's __init__.py
+        different_xml_fls = xml_files("version", True)
+        different_responses_xml = DiffResponse(
+                content_type=ContentType.XML,
+                response_one=different_xml_fls[0],
+                response_two=different_xml_fls[1])
+        same_xml_fls = xml_files("address", False)
+        same_responses_xml = DiffResponse(
+                content_type=ContentType.XML,
+                response_one=same_xml_fls[0],
+                response_two=same_xml_fls[1])
+        diffs = {}
+        response_dir = FIXTURE_DIR
+        log.info(f"response_dir: {type(response_dir)}")
+        diffs["different_diff_json"] = Diff(
+            response_dir=response_dir,
+            diff_request=json_diff_requests["different_requests_json"],
+            diff_response=different_responses_json,
+            diff_config=DiffConfig(patch=False, short=True))
+        diffs["same_diff_json"] = Diff(
+            response_dir=response_dir,
+            diff_request=json_diff_requests["same_requests_json"],
+            diff_response=same_responses_json,
+            diff_config=DiffConfig(patch=False, short=True))
+        diffs["different_diff_xml"] = Diff(
+            response_dir=response_dir,
+            diff_request=xml_diff_requests["different_requests_xml"],
+            diff_response=different_responses_xml,
+            diff_config=DiffConfig(patch=False, short=True))
+        diffs["same_diff_xml"] = Diff(
+            response_dir=response_dir,
+            diff_request=xml_diff_requests["same_requests_xml"],
+            diff_response=same_responses_xml,
+            diff_config=DiffConfig(patch=False, short=True))
+        return diffs
+
+    def test_summarize(self, response_dir, diffs):
+        diff_list = [diffs["different_diff_json"], diffs["same_diff_json"], diffs["different_diff_xml"], diffs["same_diff_xml"]]
+        summary = Summary(response_dir, diff_list)
+        html = summary.summarize()
+        assert(f"<title>{response_dir.name}</title>" in html)
+        assert(summary._css() in html)
+        different_json_link = summary._link(diffs["different_diff_json"])
+        assert(different_json_link in html)
+        same_json_link = summary._link(diffs["same_diff_json"])
+        assert(same_json_link not in html)
+        different_xml_link = summary._link(diffs["different_diff_xml"])
+        assert(different_xml_link in html)
+        same_xml_link = summary._link(diffs["same_diff_xml"])
+        assert(same_xml_link not in html)

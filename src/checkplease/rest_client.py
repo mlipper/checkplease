@@ -3,7 +3,6 @@ from typing import Any
 import requests as client
 from requests import Response as RestResponse
 
-from checkplease import log
 from checkplease.content_type import ContentType
 from checkplease.requests import DiffRequest, Request
 
@@ -26,7 +25,7 @@ class RestClient:
     def make_request(self, request: Request) -> RestResponse:
         """Make a REST request and return the response."""
         assert request.url() is not None, "Request URL cannot be None"
-        log.info(f"Making request to URL: {request.url()} with params: {request.query_params()}")
+        #log.info(f"Making request to URL: {request.url()} with params: {request.query_params()}")
         response = client.get(request.url(), params=request.query_params())
-        log.info(f"Response: {response.status_code}")
+        #log.info(f"Response: {response.status_code}")
         return response
