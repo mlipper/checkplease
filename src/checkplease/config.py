@@ -1,5 +1,4 @@
 import os
-from ast import List
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -28,7 +27,7 @@ class Environment:
 @dataclass
 class ContentTypes:
     """ Specifies which ContentType should be compared: JSON, XML, or both."""
-    content_types: List[ContentType]
+    content_types: list[ContentType]
 
     def only_json(self):
         self.content_types = [ContentType.JSON]
