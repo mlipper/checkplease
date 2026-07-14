@@ -14,12 +14,12 @@ def run(config):
     """Runs the checkplease application with the given configuration."""
     log.info("Starting checkplease application...")
     comparisons = config.compare
+    rest_client = RestClient()
     diffs = []
     for ct in comparisons.content_types:
         diff_requests = Requests(config.requests_file, config.url_one, config.url_two, ct).load()
         log.debug(f"Loaded {len(diff_requests)} {ct.value} diff requests.")
         for diff_request in diff_requests:
-            rest_client = RestClient()
             diff_response = rest_client.call(diff_request)
             diff = Diff(config.response_dir, diff_request, diff_response, config.diff)
             diff.save()
