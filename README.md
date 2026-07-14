@@ -111,6 +111,14 @@ Options:
 
 ### Running the tests
 
+With `python3` (assumes version `3.11>=`):
+
+```sh
+PYTHONPATH=src python3 -m pytest
+```
+
+With `uv`:
+
 ```sh
 uv run pytest
 ```
