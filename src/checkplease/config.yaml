@@ -15,8 +15,8 @@ environment:
 requests_file: src/checkplease/requests.json
 response_dir: responses
 url_one:
-  key: 0n3_secret
+  key: YOUR_API_KEY_ONE
   url: http://localhost:9090/geoclient/v2
 url_two:
-  key: 7w0_secret
+  key: YOUR_API_KEY_TWO
   url: https://api.nyc.gov/geoclient/v2
