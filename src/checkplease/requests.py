@@ -44,8 +44,9 @@ class Request:
         return f"{self.id}-{self.endpoint.replace('/', '-')}"
     
     def query_params(self) -> Dict[str, str]:
-        self.params[constants.API_KEY_PARAM] = self.base_url.key
-        return self.params
+        params = dict(self.params)
+        params[constants.API_KEY_PARAM] = self.base_url.key
+        return params
     
     def url(self) -> str:
         return f"{self.base_url.url}/{self.endpoint}{self.content_type.as_uri_path()}"

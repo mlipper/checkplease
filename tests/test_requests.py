@@ -71,7 +71,7 @@ class TestRequest:
     def test_query_params_with_params(self, address_xml_local_request, address_params):
         params = address_xml_local_request.query_params()
         assert len(params) == 4
-        assert params == address_params
+        assert address_params.items() <= params.items()
 
     def test_query_params_no_params(self, version_xml_remote_request, none_params):
         params = version_xml_remote_request.query_params()
