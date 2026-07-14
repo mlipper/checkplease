@@ -24,14 +24,14 @@ def expected_paths(respdir, diffreq):
     return (
         Path(
             respdir
-            / diffreq.content_type.as_dir_name()
             / diffreq.dirname()
+            / diffreq.content_type.as_dir_name()
             / diffreq.file_id_one()
         ),
         Path(
             respdir
-            / diffreq.content_type.as_dir_name()
             / diffreq.dirname()
+            / diffreq.content_type.as_dir_name()
             / diffreq.file_id_two(),
         ),
     )
@@ -39,16 +39,16 @@ def expected_paths(respdir, diffreq):
 def expected_udiff_path(respdir, diffreq):
     return Path(
             respdir
-            / diffreq.content_type.as_dir_name()
             / diffreq.dirname()
+            / diffreq.content_type.as_dir_name()
             / f"{diffreq.common_name()}{DIFF_PATCH_FILENAME_SUFFIX}")
 
 class TestDiff:
     def test_dirpath_json(self, response_dir, diff_request_json, diff_response_json, diffconfig):
         expected_dir = Path(
             response_dir
-            / diff_request_json.content_type.as_dir_name()
             / diff_request_json.dirname()
+            / diff_request_json.content_type.as_dir_name()
         )
         diff = Diff(response_dir, diff_request_json, diff_response_json, diffconfig)
         actual_dir = diff.dirpath()
@@ -57,8 +57,8 @@ class TestDiff:
     def test_htmldiff_path_json(self, response_dir, diff_request_json, diff_response_json, diffconfig):
         expected_path = Path(
             response_dir
-            / diff_request_json.content_type.as_dir_name()
             / diff_request_json.dirname()
+            / diff_request_json.content_type.as_dir_name()
             / f"{diff_request_json.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
         )
         diff = Diff(response_dir, diff_request_json, diff_response_json, diffconfig)
@@ -68,8 +68,8 @@ class TestDiff:
     def test_dirpath_xml(self, response_dir, diff_request_xml, diff_response_xml, diffconfig):
         expected_dir = Path(
             response_dir
-            / diff_request_xml.content_type.as_dir_name()
             / diff_request_xml.dirname()
+            / diff_request_xml.content_type.as_dir_name()
         )
         diff = Diff(response_dir, diff_request_xml, diff_response_xml, diffconfig)
         actual_dir = diff.dirpath()
@@ -78,8 +78,8 @@ class TestDiff:
     def test_htmldiff_path_xml(self, response_dir, diff_request_xml, diff_response_xml, diffconfig):
         expected_path = Path(
             response_dir
-            / diff_request_xml.content_type.as_dir_name()
             / diff_request_xml.dirname()
+            / diff_request_xml.content_type.as_dir_name()
             / f"{diff_request_xml.common_name()}{DIFF_HTML_FILENAME_SUFFIX}"
         )
         diff = Diff(response_dir, diff_request_xml, diff_response_xml, diffconfig)
@@ -260,7 +260,7 @@ class TestSummary:
         diff_list = [diffs["different_diff_json"], diffs["same_diff_json"], diffs["different_diff_xml"], diffs["same_diff_xml"]]
         summary = Summary(response_dir, diff_list)
         html = summary.summarize()
-        assert(f"<title>{response_dir.name}</title>" in html)
+        assert(f"<title>{FIXTURE_DATE_STAMP}</title>" in html)
         assert(summary._css() in html)
         different_json_link = summary._link(diffs["different_diff_json"])
         assert(different_json_link in html)

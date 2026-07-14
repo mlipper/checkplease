@@ -25,11 +25,14 @@ class Diff:
         self.diff_response = diff_response
         self.diff_config = diff_config
 
+    def run_dir(self) -> Path:
+        return Path(self.response_dir / self.diff_request.dirname())
+
     def dirpath(self) -> Path:
         return Path(
             self.response_dir
-            / self.diff_request.content_type.as_dir_name()
             / self.diff_request.dirname()
+            / self.diff_request.content_type.as_dir_name()
         )
 
     def filepaths(self) -> tuple[Path, Path]:
@@ -110,18 +113,19 @@ class Summary:
         self.diffs = diffs
 
     def summarize(self) -> str:
-        different = []
-        for d in self.diffs:
-            if not d.identical():
-                different.append(d)
+        if not self.diffs:
+            return ""
+        different = [d for d in self.diffs if not d.identical()]
+        date_stamp = self.diffs[0].diff_request.date_stamp
+        run_dir = self.response_dir / date_stamp
         json_section = self.section(different, ContentType.JSON)
         xml_section = self.section(different, ContentType.XML)
-        html = self._html(self._css(), self.response_dir.name, json_section + xml_section)
-        io.write_string_to_file(html, self.response_dir / "index.html")
+        html = self._html(self._css(), run_dir.name, json_section + xml_section)
+        io.write_string_to_file(html, run_dir / "index.html")
         return html
 
     def _link(self, diff: Diff) -> str:
-        relative_path = diff.htmldiff_path().relative_to(diff.response_dir)
+        relative_path = diff.htmldiff_path().relative_to(diff.run_dir())
         txt = f'<a href="{relative_path}">{diff.htmldiff_path().stem}</a>'
         return txt
 
