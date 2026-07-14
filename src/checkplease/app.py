@@ -25,6 +25,6 @@ def run(config):
             diff.save()
             diffs.append(diff)
             #log.info(f"Processed diff request {diff_request.date_stamp} and created diff {diff_response}.")
-        Summary(config.response_dir, diffs).summarize() 
+    Summary(config.response_dir, diffs).summarize()
     log.info(f"Completed REST requests for {len(diffs)} diffs.")
     log.info("checkplease application finished.")
