@@ -26,7 +26,6 @@ logging.basicConfig(
     stream=sys.stderr
 )
 log = logging.getLogger(__name__)
-log.info("%s initialized.", log)
 
 
 def load_config():
