@@ -110,7 +110,6 @@ class Summary:
         self.diffs = diffs
 
     def summarize(self) -> str:
-        #different = [d for d in self.diffs if not d.identical()]
         different = []
         for d in self.diffs:
             if not d.identical():

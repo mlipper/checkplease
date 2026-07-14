@@ -26,7 +26,6 @@ class RestClient:
         """Make a REST request and return the response."""
         if request.url() is None:
             raise ValueError("Request URL cannot be None")
-        #log.info(f"Making request to URL: {request.url()} with params: {request.query_params()}")
         response = client.get(request.url(), params=request.query_params())
         response.raise_for_status()
         return response
