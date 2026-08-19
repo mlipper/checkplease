@@ -110,7 +110,7 @@ run_container() {
     echo
 
     echo "Starting ${image_name}:${image_tag} container using command line:"
-    echo "docker run --rm -d --name ${DEFAULT_CONTAINER_NAME} --mount source=geosupport-latest,target=/opt/geosupport -p ${lport}:${cport} ${image_name}:${image_tag}"
+    echo "docker run --rm -d --platform linux/amd64 --name ${DEFAULT_CONTAINER_NAME} --mount source=geosupport-latest,target=/opt/geosupport -p ${lport}:${cport} ${image_name}:${image_tag}"
 
     STARTED_CONTAINER_ID=$(docker run --rm -d \
       --name "${DEFAULT_CONTAINER_NAME}" \
