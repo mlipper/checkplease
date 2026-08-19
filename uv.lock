@@ -39,7 +39,7 @@ wheels = [
 [[package]]
 name = "checkplease"
 version = "1.0.1a1"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
