@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from checkplease import constants, io
 from checkplease.content_type import ContentType
 from checkplease.url import Url
+
 
 @dataclass
 class DiffRequest:

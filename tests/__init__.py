@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 FIXTURE_DIR = Path(__file__).parent / 'files'
 FIXTURE_DATE_STAMP = "20260402"
 JSON_FIXTURE_DIR = FIXTURE_DIR / FIXTURE_DATE_STAMP / 'json'

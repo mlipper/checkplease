@@ -4,6 +4,7 @@ from pytest import raises
 from checkplease.constants import DEFAULT_PATH_SUFFIX, PATH_SUFFIX_XML
 from checkplease.content_type import ContentType
 
+
 class TestContentType:
 
     def test_from_string_valid(self):

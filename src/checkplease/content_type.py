@@ -1,5 +1,7 @@
 from enum import Enum
+
 from checkplease.constants import DEFAULT_PATH_SUFFIX
+
 
 class ContentType(Enum):
     JSON = "JSON"

@@ -3,7 +3,7 @@ import argparse
 import logging
 import sys
 
-from checkplease import app,load_config, log
+from checkplease import app, load_config, log
 
 
 def main():

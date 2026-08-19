@@ -1,7 +1,7 @@
 # test_api_snapshots.py
 import json
-from pathlib import Path
 from difflib import unified_diff
+from pathlib import Path
 
 # Define paths (replace with your actual snapshot storage)
 SNAPSHOT_DIR = Path(__file__).parent.parent / "responses"

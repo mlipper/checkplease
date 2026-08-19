@@ -1,7 +1,7 @@
 """Encapsulates the diff of the responses from two REST requests."""
 
-import filecmp
 import difflib
+import filecmp
 from difflib import HtmlDiff
 from pathlib import Path
 

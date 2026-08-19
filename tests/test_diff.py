@@ -1,17 +1,17 @@
 """Tests for diff module."""
 
-import pytest
 from pathlib import Path
 
-from checkplease import io
-from checkplease import log
+import pytest
+
+from checkplease import io, log
 from checkplease.config import DiffConfig
 from checkplease.constants import DIFF_HTML_FILENAME_SUFFIX, DIFF_PATCH_FILENAME_SUFFIX
 from checkplease.content_type import ContentType
 from checkplease.diff import Diff, Summary
-from checkplease.rest_client import DiffResponse
 from checkplease.requests import DiffRequest, Request
-from tests import FIXTURE_DIR, FIXTURE_DATE_STAMP, json_files, xml_files
+from checkplease.rest_client import DiffResponse
+from tests import FIXTURE_DATE_STAMP, FIXTURE_DIR, json_files, xml_files
 
 
 @pytest.fixture

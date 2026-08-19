@@ -1,13 +1,15 @@
 """Unit tests for config module."""
 
 
-import pytest
-import yaml
 from pathlib import Path
 
-from checkplease.config import load_config, DiffConfig, Environment
+import pytest
+import yaml
+
+from checkplease.config import DiffConfig, Environment, load_config
 from checkplease.content_type import ContentType
 from checkplease.url import Url
+
 
 @pytest.fixture
 def url_one():

@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from typing import Any
+
 import requests as client
 from requests import Response as RestResponse
 
 from checkplease.content_type import ContentType
 from checkplease.requests import DiffRequest, Request
+
 
 @dataclass
 class DiffResponse:

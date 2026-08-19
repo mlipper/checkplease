@@ -6,6 +6,7 @@ from typing import Any
 from checkplease.content_type import ContentType
 from checkplease.url import Url
 
+
 @dataclass
 class Environment:
     key_one: str

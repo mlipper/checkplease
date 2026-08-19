@@ -1,10 +1,12 @@
 import json
-import yaml
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from checkplease.constants import FORMAT_JSON_INDENT, FORMAT_XML_STRING
+
 
 def load_json_file(filepath: str) -> Any:
     with open(filepath, 'r') as f:
